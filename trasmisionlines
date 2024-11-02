@@ -1,0 +1,164 @@
+Estructura del Código
+El código se organiza en varias secciones, cada una con funciones específicas que contribuyen al proceso general del algoritmo genético. A continuación, se describen cada una de estas secciones y funciones.
+1. Importación de Bibliotecas
+
+python
+import random
+import numpy as np
+import matplotlib.pyplot as plt
+
+random: Esta biblioteca se utiliza para generar números aleatorios, lo cual es esencial para crear la población inicial y realizar mutaciones.
+numpy: Aunque no se utiliza directamente en este código, es común incluirlo para operaciones matemáticas avanzadas. En este caso, podrías usarlo para manejar matrices o realizar cálculos más complejos si fuera necesario.
+matplotlib.pyplot: Esta biblioteca se utiliza para visualizar los resultados finales del algoritmo. Permite crear gráficos que ayudan a interpretar los datos de manera visual.
+
+2. Definición de Parámetros del Problema
+python
+NUM_GENERATIONS = 200
+POPULATION_SIZE = 100
+MUTATION_RATE = 0.05
+
+NUM_GENERATIONS: Define el número total de generaciones que el algoritmo genético ejecutará. Un número mayor puede llevar a mejores soluciones, pero también aumenta el tiempo de ejecución.
+POPULATION_SIZE: Especifica cuántos individuos (líneas de transmisión) habrá en cada generación. Un tamaño mayor puede mejorar la diversidad genética y las posibilidades de encontrar una solución óptima.
+MUTATION_RATE: Este valor determina la probabilidad de que un individuo sufra una mutación en cada generación. Una tasa baja puede hacer que el algoritmo converja lentamente, mientras que una tasa alta puede llevar a soluciones subóptimas.
+
+3. Función Objetivo
+python
+def cost_function(line):
+    length, capacity, resistance = line
+    total_cost = (length * COST_PER_METER) + (capacity * COST_PER_MW) + (resistance * COST_PER_OHM)
+    return total_cost
+
+cost_function: Esta función calcula el costo total asociado con una línea de transmisión dada sus características (longitud, capacidad y resistencia).
+length: Longitud de la línea en metros.
+capacity: Capacidad máxima de la línea en megavatios (MW).
+resistance: Resistencia eléctrica en ohmios.
+La función utiliza constantes definidas previamente para calcular el costo total:
+
+COST_PER_METER: Costo por metro de línea.
+COST_PER_MW: Costo por megavatio de capacidad instalada.
+COST_PER_OHM: Costo por ohmio de resistencia.
+
+4. Generación de la Población Inicial
+python
+def generate_population(size):
+    population = []
+    for _ in range(size):
+        line = [
+            random.randint(100, 1000),  # Longitud entre 100 y 1000 metros
+            random.randint(50, 500),     # Capacidad entre 50 y 500 MW
+            random.uniform(0.1, 1.0)      # Resistencia entre 0.1 y 1.0 ohmios
+        ]
+        population.append(line)
+    return population
+
+generate_population: Esta función crea una población inicial aleatoria de líneas de transmisión.
+Utiliza random.randint y random.uniform para generar valores aleatorios dentro de rangos específicos para cada parámetro.
+La longitud varía entre 100 y 1000 metros, la capacidad entre 50 y 500 MW, y la resistencia entre 0.1 y 1.0 ohmios.
+La población generada es una lista de listas donde cada sublista representa las características de una línea.
+
+5. Selección de Padres
+python
+def select_parents(population):
+    sorted_population = sorted(population, key=cost_function)
+    return sorted_population[:2]  # Selecciona los dos mejores
+
+select_parents: Esta función selecciona los dos mejores individuos (líneas) basándose en su costo total calculado por cost_function.
+La población se ordena utilizando la función objetivo como clave.
+Devuelve los dos individuos con menor costo, que serán utilizados como padres en la próxima generación.
+
+6. Cruzamiento (Crossover)
+python
+def crossover(parent1, parent2):
+    child = [
+        random.choice([parent1[0], parent2[0]]),  # Longitud
+        random.choice([parent1[1], parent2[1]]),  # Capacidad
+        random.choice([parent1[2], parent2[2]])   # Resistencia
+    ]
+    return child
+
+crossover: Esta función genera un nuevo individuo (hijo) combinando características de dos padres seleccionados.
+Para cada parámetro (longitud, capacidad y resistencia), se elige aleatoriamente uno de los valores correspondientes a los padres.
+Este proceso permite combinar las mejores características de ambos padres en un nuevo individuo.
+
+7. Mutación
+python
+def mutate(line):
+    if random.random() < MUTATION_RATE:
+        line[0] += random.randint(-10, 10)  # Cambiar longitud
+        line[0] = max(100, min(line[0], 1000))  # Restringir longitud a [100, 1000]
+    if random.random() < MUTATION_RATE:
+        line[1] += random.randint(-5, 5)    # Cambiar capacidad
+        line[1] = max(50, min(line[1], 500))   # Restringir capacidad a [50, 500]
+    if random.random() < MUTATION_RATE:
+        line[2] += random.uniform(-0.05, 0.05)  # Cambiar resistencia
+        line[2] = max(0.1, min(line[2], 1.0))     # Restringir resistencia a [0.1, 1.0]
+    return line
+
+mutate: Esta función introduce variaciones aleatorias en un individuo dado.
+Para cada parámetro (longitud, capacidad y resistencia), hay una probabilidad determinada por MUTATION_RATE que puede modificar su valor.
+Las restricciones aseguran que los valores resultantes permanezcan dentro de límites razonables.
+La mutación es crucial para mantener la diversidad genética dentro de la población y evitar que el algoritmo se estanque en soluciones subóptimas.
+
+8. Algoritmo Genético Principal
+python
+def genetic_algorithm():
+    population = generate_population(POPULATION_SIZE)
+
+    for generation in range(NUM_GENERATIONS):
+        parents = select_parents(population)
+        next_generation = parents.copy()
+
+        while len(next_generation) < POPULATION_SIZE:
+            parent1, parent2 = select_parents(population)
+            child = crossover(parent1, parent2)
+            child = mutate(child)
+            next_generation.append(child)
+
+        population = next_generation
+
+    best_line = min(population, key=cost_function)
+    return best_line
+
+genetic_algorithm: Esta es la función principal que ejecuta el algoritmo genético durante un número definido de generaciones.
+Se genera una población inicial.
+
+En cada generación:
+Se seleccionan los mejores padres.
+Se crean nuevos individuos mediante cruzamiento y mutación hasta llenar la próxima generación.
+La población se actualiza con esta nueva generación.
+Al final del proceso, se encuentra el mejor individuo basado en el costo total calculado.
+
+9. Visualización de Resultados
+python
+def visualize_results(best_configuration):
+    labels = ['Longitud (m)', 'Capacidad (MW)', 'Resistencia (Ohm)']
+    values = best_configuration
+    
+    plt.bar(labels, values)
+    plt.title('Mejor Configuración Encontrada')
+    plt.ylabel('Valores')
+    plt.show()
+
+visualize_results: Esta función crea un gráfico de barras que muestra las características del mejor individuo encontrado al final del algoritmo.
+Utiliza matplotlib para representar visualmente los valores asociados a longitud, capacidad y resistencia.
+La visualización ayuda a interpretar rápidamente los resultados del algoritmo.
+
+10. Ejecución del Programa
+python
+if __name__ == "__main__":
+    best_configuration = genetic_algorithm()
+    
+    print("Mejor configuración encontrada:")
+    print(f"Longitud: {best_configuration[0]} m")
+    print(f"Capacidad: {best_configuration[1]} MW")
+    print(f"Resistencia: {best_configuration[2]:.2f} ohmios")
+    print(f"Costo total: {cost_function(best_configuration):.2f}")
+
+    visualize_results(best_configuration)
+
+Este bloque permite ejecutar el programa como un script independiente.
+Llama a genetic_algorithm para obtener la mejor configuración y luego imprime los resultados en la consola.
+Finalmente, llama a visualize_results para mostrar gráficamente las características del mejor individuo encontrado.
+Conclusión
+Este código implementa un modelo básico pero efectivo para optimizar el dimensionamiento de líneas de transmisión eléctrica utilizando un algoritmo genético. Aunque simplificado para fines educativos y demostrativos, proporciona una base sólida sobre la cual se pueden construir modelos más complejos e integrados con datos reales del mundo energético actual.
+Se puede expandir aún más este modelo incorporando datos históricos sobre demanda eléctrica real o condiciones ambientales específicas que afecten el diseño y operación realista de las líneas eléctricas. Además, explorar otros algoritmos evolutivos o técnicas avanzadas podría mejorar aún más la eficacia del proceso de optimización.
